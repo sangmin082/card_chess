@@ -20,7 +20,7 @@ name: iOS
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, 'claude/card-chess-app-plan-*']
     tags: ['v*']
   workflow_dispatch:
     inputs:
