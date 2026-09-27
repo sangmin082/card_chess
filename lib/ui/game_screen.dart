@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../engine/engine.dart';
 import '../state/game_controller.dart';
+import '../state/kifu_store.dart';
 import 'setup_screen.dart';
 import 'widgets/board_widget.dart';
 import 'widgets/card_widget.dart';
@@ -49,6 +50,17 @@ class _GameScreenState extends State<GameScreen> {
     final r = g.result!;
     final m = c.match;
     final matchOver = c.phase == Phase.matchOver;
+    // 끝난 세트는 자동 저장한다.
+    try {
+      await KifuStore().save(
+        KifuSet.fromState(
+          g,
+          title: '${m.sets.length}세트 · ${c.mode.label}',
+          playerNames: m.playerNames,
+        ),
+      );
+    } catch (_) {}
+    if (!mounted) return;
     await showDialog<void>(
       context: context,
       barrierDismissible: false,

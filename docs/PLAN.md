@@ -18,7 +18,7 @@
 | M1 | 순수 게임 엔진 (UI 없음) + 기보 재생 테스트 통과 | `lib/engine/`, 테스트 | ✅ |
 | M2 | 로컬 2인 대전 UI (핫시트) | 플레이 가능한 앱 | ✅ |
 | M3 | AI 상대 (난이도 3단계) | 싱글 플레이 | ✅ |
-| M4 | 기보 저장/불러오기/재생, 튜토리얼 | 완성도 | 🔶 원작 기보 재생·기보 복사·규칙 화면 완료 / 저장·불러오기 남음 |
+| M4 | 기보 저장/불러오기/재생, 튜토리얼 | 완성도 | ✅ 세트 종료 시 자동 저장, 목록/삭제, 텍스트 붙여넣기, 원작 기보 재생, 규칙 화면 |
 | M5 | 온라인 대전 (실시간 매칭) | 멀티플레이 | ⬜ |
 | M6 | 스토어 배포 (iOS / Android / Web) | 릴리즈 | 🔶 CI 워크플로우 완료 / 서명·스토어 등록 남음 |
 
@@ -103,7 +103,7 @@
 | 프레임워크 | **Flutter (Dart)** | iOS/Android/Web 단일 코드베이스. 5×5 보드는 `CustomPainter`/위젯으로 충분하고 애니메이션 지원이 좋다. 게임엔진급(Unity/Godot)은 이 규모에 과함. |
 | 게임 엔진 | 순수 Dart 패키지 (`Flutter` 의존 없음) | UI와 분리해 `dart test`로 빠르게 검증. 나중에 서버(온라인 판정)에서도 같은 코드를 재사용. |
 | 상태 관리 | Riverpod | 엔진 상태를 불변 객체로 두고 UI에 스트림 형태로 노출. |
-| 로컬 저장 | `shared_preferences` + JSON 파일 (기보/설정) | 가볍고 충분. |
+| 로컬 저장 | `shared_preferences` (기보 JSON 목록) | 가볍고 충분. |
 | 온라인 (M5) | Firebase (Auth + Firestore/Realtime DB) 또는 Supabase | 턴제라 실시간 요구가 낮음. 수를 문서로 append, 양측 엔진이 검증. |
 | CI | GitHub Actions: `dart analyze`, `dart test`, `flutter build web` | PR마다 엔진 테스트 자동 실행. |
 

@@ -7,6 +7,7 @@ import '../state/game_controller.dart';
 import 'game_screen.dart';
 import 'replay_screen.dart';
 import 'rules_screen.dart';
+import 'saved_kifu_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -55,6 +56,17 @@ class HomeScreen extends StatelessWidget {
                     onPressed: () => _openReplay(context),
                     icon: const Icon(Icons.history),
                     label: const Text('원작 기보 보기'),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const SavedKifuScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.save),
+                    label: const Text('저장된 기보'),
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
