@@ -17,10 +17,10 @@ class GameState {
     required this.options,
     required this.firstPlayer,
     required this.placement,
-  })  : squares = List.unmodifiable(squares),
-        whiteHand = List.unmodifiable(whiteHand),
-        blackHand = List.unmodifiable(blackHand),
-        history = List.unmodifiable(history);
+  }) : squares = List.unmodifiable(squares),
+       whiteHand = List.unmodifiable(whiteHand),
+       blackHand = List.unmodifiable(blackHand),
+       history = List.unmodifiable(history);
 
   /// 세트 시작 상태. 후공이 정한 [placement]에 따라 카드를 나눈다.
   factory GameState.initial({
@@ -34,8 +34,10 @@ class GameState {
     final squares = List<Piece?>.filled(Pos.size * Pos.size, null);
     for (final color in PlayerColor.values) {
       for (var rank = 0; rank < Pos.size; rank++) {
-        squares[Pos(color.homeFile, rank).index] =
-            Piece(color, color.initialFacing);
+        squares[Pos(color.homeFile, rank).index] = Piece(
+          color,
+          color.initialFacing,
+        );
       }
     }
     final second = firstPlayer.opponent;
@@ -87,9 +89,9 @@ class GameState {
 
   /// [color] 말들의 위치.
   List<Pos> piecesOf(PlayerColor color) => [
-        for (var i = 0; i < squares.length; i++)
-          if (squares[i]?.owner == color) Pos.fromIndex(i),
-      ];
+    for (var i = 0; i < squares.length; i++)
+      if (squares[i]?.owner == color) Pos.fromIndex(i),
+  ];
 
   /// 상대 성 위에 올라가 있는 [color]의 말 위치. 없으면 null.
   Pos? intruderOf(PlayerColor color) {
@@ -196,17 +198,17 @@ class GameState {
   }
 
   GameState _withResult(GameResult r) => GameState._(
-        squares: squares,
-        toMove: toMove,
-        whiteHand: whiteHand,
-        blackHand: blackHand,
-        waiting: waiting,
-        history: history,
-        result: r,
-        options: options,
-        firstPlayer: firstPlayer,
-        placement: placement,
-      );
+    squares: squares,
+    toMove: toMove,
+    whiteHand: whiteHand,
+    blackHand: blackHand,
+    waiting: waiting,
+    history: history,
+    result: r,
+    options: options,
+    firstPlayer: firstPlayer,
+    placement: placement,
+  );
 
   /// 직전 수를 되돌린 상태. 처음부터 다시 재생한다.
   GameState? undo({int count = 1}) {
@@ -218,17 +220,19 @@ class GameState {
   GameState replay(int n) {
     var s = initialOf(this);
     for (var i = 0; i < n; i++) {
-      s = s.applyUnchecked(s.legalMoves().firstWhere((m) => m.sameAs(history[i])));
+      s = s.applyUnchecked(
+        s.legalMoves().firstWhere((m) => m.sameAs(history[i])),
+      );
     }
     return s;
   }
 
   /// [state]와 같은 설정의 시작 상태.
   static GameState initialOf(GameState state) => GameState.initial(
-        firstPlayer: state.firstPlayer,
-        placement: state.placement,
-        options: state.options,
-      );
+    firstPlayer: state.firstPlayer,
+    placement: state.placement,
+    options: state.options,
+  );
 
   /// 디버그용 보드 문자열. 위가 a열(흑), 아래가 e열(백).
   String toBoardString() {
@@ -238,10 +242,12 @@ class GameState {
       for (var rank = 0; rank < Pos.size; rank++) {
         final p = squares[Pos(file, rank).index];
         if (p == null) {
-          b.write(Pos(file, rank) == PlayerColor.white.castle ||
-                  Pos(file, rank) == PlayerColor.black.castle
-              ? ' ◇'
-              : ' ·');
+          b.write(
+            Pos(file, rank) == PlayerColor.white.castle ||
+                    Pos(file, rank) == PlayerColor.black.castle
+                ? ' ◇'
+                : ' ·',
+          );
         } else {
           final c = p.owner == PlayerColor.white ? 'W' : 'B';
           b.write(p.facing == Facing.minusFile ? ' $c↑' : ' $c↓');
@@ -250,9 +256,11 @@ class GameState {
       b.writeln();
     }
     b.writeln('   1  2  3  4  5');
-    b.writeln('백: ${whiteHand.map((c) => c.symbol).join(',')}  '
-        '대기: ${waiting.symbol}  흑: ${blackHand.map((c) => c.symbol).join(',')}  '
-        '차례: ${toMove.korean}');
+    b.writeln(
+      '백: ${whiteHand.map((c) => c.symbol).join(',')}  '
+      '대기: ${waiting.symbol}  흑: ${blackHand.map((c) => c.symbol).join(',')}  '
+      '차례: ${toMove.korean}',
+    );
     return b.toString();
   }
 }

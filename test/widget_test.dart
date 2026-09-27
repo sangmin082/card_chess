@@ -1,30 +1,47 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+import 'package:card_chess/engine/engine.dart';
+import 'package:card_chess/main.dart';
+import 'package:card_chess/state/game_controller.dart';
+import 'package:card_chess/ui/game_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:card_chess/main.dart';
-
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('홈 화면에 메뉴가 보인다', (tester) async {
+    await tester.pumpWidget(const CardChessApp());
+    expect(find.text('카드 체스'), findsOneWidget);
+    expect(find.text('AI 대전'), findsOneWidget);
+    expect(find.text('로컬 2인 대전'), findsOneWidget);
+    expect(find.text('규칙'), findsOneWidget);
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  testWidgets('로컬 대전: 카드 배치 후 카드→말→목적지 탭으로 착수', (tester) async {
+    final controller = GameController(
+      mode: const LocalMode(),
+      firstPlayerOfSet1: PlayerColor.white,
+    );
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(controller: controller)),
+    );
+    expect(find.text('카드 배치'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    controller.startSet(
+      const CardPlacement(
+        firstPlayerHand: [CardType.rook, CardType.jumper],
+        secondPlayerHand: [CardType.bishop, CardType.attacker],
+        waiting: CardType.knight,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(controller.phase, Phase.playing);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    controller.selectCard(CardType.rook);
+    controller.tapSquare(Pos.parse('e3'));
+    expect(controller.highlightedMoves.map((m) => m.to!.algebraic), ['d3']);
+    controller.tapSquare(Pos.parse('d3'));
+    await tester.pumpAndSettle();
+    expect(controller.game!.moveNumber, 1);
+    expect(controller.game!.toMove, PlayerColor.black);
+    expect(controller.lastMove!.notation, 'Re3→d3');
+    expect(find.text('Re3→d3'), findsNothing);
   });
 }

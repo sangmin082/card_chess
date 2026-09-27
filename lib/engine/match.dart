@@ -5,7 +5,12 @@ import 'game_state.dart';
 import 'model.dart';
 
 class SetRecord {
-  const SetRecord({required this.index, required this.firstPlayer, required this.result, required this.history});
+  const SetRecord({
+    required this.index,
+    required this.firstPlayer,
+    required this.result,
+    required this.history,
+  });
   final int index;
   final PlayerColor firstPlayer;
   final GameResult result;
@@ -62,11 +67,13 @@ class MatchState {
 
   void recordSet(GameState finished) {
     if (!finished.isOver) throw ArgumentError('끝나지 않은 세트입니다.');
-    sets.add(SetRecord(
-      index: nextSetIndex,
-      firstPlayer: finished.firstPlayer,
-      result: finished.result!,
-      history: finished.history,
-    ));
+    sets.add(
+      SetRecord(
+        index: nextSetIndex,
+        firstPlayer: finished.firstPlayer,
+        result: finished.result!,
+        history: finished.history,
+      ),
+    );
   }
 }

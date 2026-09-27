@@ -23,7 +23,9 @@ void main() {
         s = s.applyUnchecked(moves[rng.nextInt(moves.length)]);
         final all = [...s.whiteHand, ...s.blackHand, s.waiting];
         expect(all.length, 5);
-        final normalized = all.map((c) => c == CardType.queen ? CardType.jumper : c).toSet();
+        final normalized = all
+            .map((c) => c == CardType.queen ? CardType.jumper : c)
+            .toSet();
         expect(normalized, initialCards.toSet(), reason: '카드 집합 깨짐: $all');
         expect(s.totalPieces <= pieces, isTrue);
         pieces = s.totalPieces;

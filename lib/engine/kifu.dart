@@ -67,10 +67,10 @@ class KifuSet {
         .toList();
 
     PlayerColor color(String v) => switch (v.trim().toLowerCase()) {
-          'white' || 'w' || '백' => PlayerColor.white,
-          'black' || 'b' || '흑' => PlayerColor.black,
-          _ => throw FormatException('색 형식 오류: $v'),
-        };
+      'white' || 'w' || '백' => PlayerColor.white,
+      'black' || 'b' || '흑' => PlayerColor.black,
+      _ => throw FormatException('색 형식 오류: $v'),
+    };
 
     for (final raw in text.split('\n')) {
       final line = raw.trim();
@@ -136,7 +136,9 @@ class KifuSet {
     b.writeln('black: ${s.blackHand.map((c) => c.symbol).join(',')}');
     b.writeln('waiting: ${s.waiting.symbol}');
     if (playerNames.isNotEmpty) {
-      b.writeln('names: ${playerNames.entries.map((e) => '${e.key.name}=${e.value}').join(', ')}');
+      b.writeln(
+        'names: ${playerNames.entries.map((e) => '${e.key.name}=${e.value}').join(', ')}',
+      );
     }
     b.writeln('moves: ${moves.map((m) => m.notation).join(' ')}');
     if (winner != null) b.writeln('winner: ${winner!.name}');

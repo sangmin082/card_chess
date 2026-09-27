@@ -46,7 +46,11 @@ String _joinContinuations(String text) {
   return out.join('\n');
 }
 
-final KifuSet originalSet1 = KifuSet.parse(_joinContinuations(originalSet1Text));
-final KifuSet originalSet2 = KifuSet.parse(_joinContinuations(originalSet2Text));
+final KifuSet originalSet1 = KifuSet.parse(
+  _joinContinuations(originalSet1Text),
+);
+final KifuSet originalSet2 = KifuSet.parse(
+  _joinContinuations(originalSet2Text),
+);
 
 final List<KifuSet> originalGames = [originalSet1, originalSet2];

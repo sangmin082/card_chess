@@ -22,7 +22,9 @@ void main() {
           waiting: CardType.attacker,
         ),
       );
-      for (final m in 'Ne1→c2 Ra1→b1 Ac2→b2 Na2→c3 Rb2→c2 Aa3→b3 Nc2→a3'.split(' ')) {
+      for (final m in 'Ne1→c2 Ra1→b1 Ac2→b2 Na2→c3 Rb2→c2 Aa3→b3 Nc2→a3'.split(
+        ' ',
+      )) {
         s = s.apply(Move.parse(m));
       }
       final ai = AiPlayer(AiLevel.normal);
@@ -53,7 +55,9 @@ void main() {
         var s = GameState.initial(firstPlayer: first, placement: placement);
         while (!s.isOver && s.moveNumber < 200) {
           if (s.toMove == aiColor) {
-            s = s.applyUnchecked(ai.search(s, maxDepth: 2, timeLimitMs: 5000)!.move);
+            s = s.applyUnchecked(
+              ai.search(s, maxDepth: 2, timeLimitMs: 5000)!.move,
+            );
           } else {
             final moves = s.legalMoves();
             s = s.applyUnchecked(moves[rng.nextInt(moves.length)]);

@@ -85,7 +85,13 @@ class AiPlayer {
         final scored = <(Move, int)>[];
         var alpha = -_inf;
         for (final m in moves) {
-          final v = -_negamax(state.applyUnchecked(m), depth - 1, -_inf, -alpha, 1);
+          final v = -_negamax(
+            state.applyUnchecked(m),
+            depth - 1,
+            -_inf,
+            -alpha,
+            1,
+          );
           scored.add((m, v));
           if (v > alpha) alpha = v;
         }

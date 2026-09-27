@@ -62,16 +62,22 @@ Set<CardType> _cards(String s) =>
 /// 바꾸므로 비교 시 퀸을 점퍼로 정규화한다.
 CardType _norm(CardType c) => c == CardType.queen ? CardType.jumper : c;
 
-void _checkCards(List<GameState> states, PlayerColor first,
-    List<(String, String, String)> table) {
+void _checkCards(
+  List<GameState> states,
+  PlayerColor first,
+  List<(String, String, String)> table,
+) {
   expect(states.length, table.length);
   for (var i = 0; i < table.length; i++) {
     final (f, w, s) = table[i];
     final st = states[i];
     expect(st.hand(first).map(_norm).toSet(), _cards(f), reason: '$i수 후 선공 손패');
     expect(_norm(st.waiting), CardType.fromSymbol(w), reason: '$i수 후 대기 존');
-    expect(st.hand(first.opponent).map(_norm).toSet(), _cards(s),
-        reason: '$i수 후 후공 손패');
+    expect(
+      st.hand(first.opponent).map(_norm).toSet(),
+      _cards(s),
+      reason: '$i수 후 후공 손패',
+    );
   }
 }
 
@@ -129,7 +135,10 @@ void main() {
       expect(states[21].totalPieces, 2);
       expect(states[20].waiting, CardType.jumper);
       expect(states[21].hand(PlayerColor.black), contains(CardType.queen));
-      expect(states[21].hand(PlayerColor.black), isNot(contains(CardType.jumper)));
+      expect(
+        states[21].hand(PlayerColor.black),
+        isNot(contains(CardType.jumper)),
+      );
     });
 
     test('2세트: 잡는 수(x) 표기가 엔진 판정과 일치', () {

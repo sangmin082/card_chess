@@ -1,11 +1,11 @@
 {
-    "name": "card_chess",
-    "short_name": "card_chess",
+    "name": "카드 체스",
+    "short_name": "카드 체스",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "피의 게임 카드 체스",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

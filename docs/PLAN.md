@@ -12,15 +12,15 @@
 - 원작 룰을 정확히 재현하고, 기보(棋譜) 기록/재생 기능을 제공한다.
 
 ### 1.2 단계별 범위
-| 단계 | 내용 | 산출물 |
-|---|---|---|
-| M0 | 룰 확정 + 기술 스택 확정 | 이 문서, 룰 명세 확정 |
-| M1 | 순수 게임 엔진 (UI 없음) + 기보 재생 테스트 통과 | `engine/` 패키지, 테스트 |
-| M2 | 로컬 2인 대전 UI (핫시트) | 플레이 가능한 앱 |
-| M3 | AI 상대 (난이도 3단계) | 싱글 플레이 |
-| M4 | 기보 저장/불러오기/재생, 튜토리얼 | 완성도 |
-| M5 | 온라인 대전 (실시간 매칭) | 멀티플레이 |
-| M6 | 스토어 배포 (iOS / Android / Web) | 릴리즈 |
+| 단계 | 내용 | 산출물 | 상태 |
+|---|---|---|---|
+| M0 | 룰 확정 + 기술 스택 확정 | 이 문서, 룰 명세 확정 | ✅ (기본값 적용, 12절 확인 필요) |
+| M1 | 순수 게임 엔진 (UI 없음) + 기보 재생 테스트 통과 | `lib/engine/`, 테스트 | ✅ |
+| M2 | 로컬 2인 대전 UI (핫시트) | 플레이 가능한 앱 | ✅ |
+| M3 | AI 상대 (난이도 3단계) | 싱글 플레이 | ✅ |
+| M4 | 기보 저장/불러오기/재생, 튜토리얼 | 완성도 | 🔶 원작 기보 재생·기보 복사·규칙 화면 완료 / 저장·불러오기 남음 |
+| M5 | 온라인 대전 (실시간 매칭) | 멀티플레이 | ⬜ |
+| M6 | 스토어 배포 (iOS / Android / Web) | 릴리즈 | 🔶 CI 워크플로우 완료 / 서명·스토어 등록 남음 |
 
 ---
 
@@ -113,42 +113,48 @@
 
 ## 4. 아키텍처
 
+단일 Flutter 프로젝트 안에서 엔진(`lib/engine/`)과 UI(`lib/ui/`, `lib/state/`)를 분리한다.
+엔진은 Flutter 를 import 하지 않는 순수 Dart 라 `flutter test` 로 빠르게 검증되고,
+나중에 온라인 판정 서버에서도 그대로 재사용할 수 있다.
+
 ```
 card_chess/
-├── packages/
-│   └── card_chess_engine/        # 순수 Dart. Flutter 의존 없음.
-│       ├── lib/
-│       │   ├── model/            # Position, Piece, Card, GameState, Move, MatchState
-│       │   ├── rules/            # 카드별 MoveGenerator, 승리 판정, 카드 순환
-│       │   ├── notation/         # 기보 파서/직렬화 (Na1→c2x)
-│       │   └── ai/               # 평가 함수, Negamax + alpha-beta, 난이도
-│       └── test/
-│           ├── fixtures/         # 원작 기보 set1.txt, set2.txt
-│           ├── move_gen_test.dart
-│           ├── replay_test.dart  # 기보 전체 재생 → 합법성/결과 검증
-│           └── ai_test.dart
-├── apps/
-│   └── card_chess_app/           # Flutter 앱
-│       ├── lib/
-│       │   ├── features/
-│       │   │   ├── home/
-│       │   │   ├── setup/        # 카드 배치 화면
-│       │   │   ├── game/         # 보드, 카드 패널, 대기 존, 턴 표시
-│       │   │   ├── replay/       # 기보 재생
-│       │   │   └── online/       # (M5)
-│       │   ├── state/            # Riverpod providers
-│       │   └── theme/
-│       └── test/                 # 위젯 테스트
-└── docs/
-    └── PLAN.md
+├── lib/
+│   ├── main.dart
+│   ├── engine/                   # 순수 Dart. Flutter 의존 없음.
+│   │   ├── model.dart            # PlayerColor, CardType, Facing, Pos, Piece, Move, RuleOptions, CardPlacement
+│   │   ├── move_gen.dart         # 카드별 합법 수 생성
+│   │   ├── game_state.dart       # 불변 GameState, apply, 승리 판정, undo/replay
+│   │   ├── kifu.dart             # 기보 파서/직렬화 (KifuSet)
+│   │   ├── original_games.dart   # 원작 2세트 기보 픽스처
+│   │   ├── match.dart            # 3세트 매치 (MatchState)
+│   │   └── ai.dart               # Negamax + alpha-beta + 반복 심화, 카드 배치 선택
+│   ├── state/
+│   │   └── game_controller.dart  # ChangeNotifier. 단계(placement/playing/setOver/matchOver), 선택 상태, AI 턴(compute)
+│   └── ui/
+│       ├── home_screen.dart      # 모드 선택, AI 설정 다이얼로그
+│       ├── setup_screen.dart     # 후공 카드 배치 (탭/드래그)
+│       ├── game_screen.dart      # 보드 + 손패 + 대기 존 + 결과 다이얼로그
+│       ├── replay_screen.dart    # 기보 재생
+│       ├── rules_screen.dart
+│       ├── theme.dart
+│       └── widgets/              # BoardWidget, CardView(이동 패턴 그림), PieceView
+├── test/
+│   ├── engine/
+│   │   ├── replay_test.dart      # 원작 45수 재생, 카드 흐름 진행표 대조, 잡음 표기 대조
+│   │   ├── move_gen_test.dart    # 카드별 규칙, 방향 반전, 점퍼 조건, 퀸 변환, 성 점령
+│   │   ├── random_play_test.dart # 무작위 1500판 불변식, undo/replay 일치
+│   │   └── ai_test.dart
+│   └── widget_test.dart
+├── .github/workflows/            # ci.yml, ios.yml, pages.yml
+└── docs/                         # PLAN.md, IOS_BUILD.md, screenshots/
 ```
 
 핵심 원칙:
 - **엔진은 불변(immutable) 상태 + 순수 함수**. `GameState.apply(Move) → GameState`. 되돌리기/재생/AI 탐색이 모두 이 구조에 의존한다.
 - UI는 엔진에 "합법 수 목록"을 물어보고 하이라이트만 그린다. 규칙 판단을 UI에 두지 않는다.
 - 온라인 대전 시 양쪽 클라이언트가 같은 엔진으로 상대 수를 재검증한다.
-
----
+- 상태 관리는 `ChangeNotifier` 하나로 충분해 Riverpod 은 쓰지 않았다. 외부 패키지 의존성 0.
 
 ## 5. 데이터 모델
 
@@ -320,7 +326,7 @@ UI 상 취소(카드 선택 취소, 말 선택 취소)를 항상 허용한다. �
 | M3 AI | 1주 | 보통 난이도가 무작위 플레이어를 95% 이상 이김 |
 | M4 기보/튜토리얼 | 1주 | 기보 저장·재생, 규칙 화면 |
 | M5 온라인 | 2주 | 초대 코드 대전 |
-| M6 배포 | 1주 | 스토어 심사 제출 |
+| M6 배포 | 1주 | 스토어 심사 제출. iOS 는 맥 없이 GitHub Actions macOS 러너로 빌드 (docs/IOS_BUILD.md) |
 
 ---
 
@@ -356,4 +362,4 @@ UI 상 취소(카드 선택 취소, 말 선택 취소)를 항상 허용한다. �
 - 점퍼 사용 7회 모두 자기 말을 넘었다 (`Je5→e3`, `Ja2→c4`, `Je2→c4x`, `Ja1→a3`, `Jd3→d1`, `Ja5→a3`, `Jd4→b4`).
 - 어태커 직진 2칸(`Ad3→b3x`, `Ac2→a2x`), 직진 1칸(`Aa3→b3`), 전방 대각(`Ab3→c4x`, `Ab5→c4x`) 모두 등장.
 - 말이 끝 줄에 도달한 사례: `Ac2→a2x`(백, a열), `Bb3→a4x`(백, a열). 둘 다 다음 수에 잡혀 방향 전환 후 어태커 이동은 기보로 검증 불가.
-- 퀸 전환은 두 세트 모두 발생하지 않았다(1:1 상황 없음).
+- 2세트 21수(`Ab5→c4x`) 뒤 백 1 : 흑 1 로 보드에 말이 2개만 남는다. 룰대로면 이 시점에 점퍼가 퀸이 되어야 하지만 원작 진행표는 계속 `J`로 적고 있다. 엔진은 룰 원문을 따라 퀸으로 바꾸고, 재생 테스트는 이 차이를 정규화해 비교한다.

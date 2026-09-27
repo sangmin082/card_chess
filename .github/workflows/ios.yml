@@ -1,0 +1,171 @@
+# iOS 빌드는 macOS 러너에서만 가능하다. 맥이 없어도 이 워크플로우로 IPA를 만든다.
+#
+# 1) 서명 없는 빌드 (기본, 시크릿 불필요)
+#    - 시뮬레이터/검증용 .app 과 서명 안 된 .ipa 를 아티팩트로 올린다.
+#    - 실제 기기 설치는 불가. Sideloadly / AltStore 등으로 본인 Apple ID 서명 후 설치 가능.
+#
+# 2) 서명된 빌드 + TestFlight 업로드 (시크릿이 모두 설정되면 자동 활성화)
+#    Repository secrets:
+#      IOS_CERTIFICATE_P12_BASE64  : Apple Distribution 인증서(.p12)를 base64 인코딩한 값
+#      IOS_CERTIFICATE_PASSWORD    : .p12 비밀번호
+#      IOS_PROVISION_PROFILE_BASE64: App Store 배포용 .mobileprovision 을 base64 인코딩한 값
+#      IOS_TEAM_ID                 : Apple Developer Team ID (10자리)
+#      APPSTORE_ISSUER_ID          : App Store Connect API 키 Issuer ID
+#      APPSTORE_KEY_ID             : App Store Connect API 키 ID
+#      APPSTORE_PRIVATE_KEY        : App Store Connect API 키(.p8) 내용 전체
+#    인증서/프로비저닝 프로파일은 developer.apple.com 에서 웹으로 만들 수 있다 (맥 불필요:
+#    CSR 은 openssl 로 생성). 자세한 절차는 docs/IOS_BUILD.md 참고.
+
+name: iOS
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      upload_testflight:
+        description: 'TestFlight 업로드 (서명 시크릿 필요)'
+        type: boolean
+        default: false
+
+env:
+  FLUTTER_VERSION: '3.47.5'
+
+jobs:
+  unsigned:
+    name: Build iOS (unsigned)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter doctor -v
+      - name: Build (no codesign)
+        run: flutter build ios --release --no-codesign
+      - name: Package unsigned IPA
+        run: |
+          set -e
+          mkdir -p build/ios/unsigned/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ios/unsigned/Payload/
+          cd build/ios/unsigned
+          zip -qr card_chess-unsigned.ipa Payload
+          ls -la
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-unsigned-ipa
+          path: build/ios/unsigned/card_chess-unsigned.ipa
+      - name: Build for simulator
+        run: flutter build ios --simulator --debug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-simulator-app
+          path: build/ios/iphonesimulator/Runner.app
+
+  signed:
+    name: Build iOS (signed) & TestFlight
+    runs-on: macos-latest
+    needs: unsigned
+    # 시크릿이 있을 때만 실행 (secrets 는 if 에서 직접 못 쓰므로 env 로 옮긴다).
+    env:
+      HAS_SIGNING: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 != '' && secrets.IOS_PROVISION_PROFILE_BASE64 != '' && secrets.IOS_TEAM_ID != '' }}
+      HAS_ASC: ${{ secrets.APPSTORE_ISSUER_ID != '' && secrets.APPSTORE_KEY_ID != '' && secrets.APPSTORE_PRIVATE_KEY != '' }}
+    steps:
+      - name: Check secrets
+        id: check
+        run: |
+          echo "signing=$HAS_SIGNING" >> "$GITHUB_OUTPUT"
+          echo "asc=$HAS_ASC" >> "$GITHUB_OUTPUT"
+          if [ "$HAS_SIGNING" != "true" ]; then
+            echo "::notice::서명 시크릿이 없어 서명 빌드를 건너뜁니다. docs/IOS_BUILD.md 참고."
+          fi
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.signing == 'true'
+      - uses: subosito/flutter-action@v2
+        if: steps.check.outputs.signing == 'true'
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Install certificate & profile
+        if: steps.check.outputs.signing == 'true'
+        env:
+          P12_BASE64: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ github.run_id }}
+        run: |
+          set -e
+          CERT=$RUNNER_TEMP/cert.p12
+          PROFILE=$RUNNER_TEMP/profile.mobileprovision
+          KEYCHAIN=$RUNNER_TEMP/build.keychain-db
+          echo -n "$P12_BASE64" | base64 --decode > "$CERT"
+          echo -n "$PROFILE_BASE64" | base64 --decode > "$PROFILE"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$CERT" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychain -d user -s "$KEYCHAIN"
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' /dev/stdin <<< "$(security cms -D -i "$PROFILE")")
+          NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' /dev/stdin <<< "$(security cms -D -i "$PROFILE")")
+          cp "$PROFILE" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
+          echo "PROFILE_NAME=$NAME" >> "$GITHUB_ENV"
+          echo "프로파일: $NAME ($UUID)"
+      - name: Write ExportOptions.plist
+        if: steps.check.outputs.signing == 'true'
+        env:
+          TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          BUNDLE_ID=$(grep -m1 PRODUCT_BUNDLE_IDENTIFIER ios/Runner.xcodeproj/project.pbxproj | sed 's/.*= \(.*\);/\1/' | tr -d ' "')
+          cat > ios/ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${TEAM_ID}</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict><key>${BUNDLE_ID}</key><string>${PROFILE_NAME}</string></dict>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          PLIST
+          cat ios/ExportOptions.plist
+      - name: Build signed IPA
+        if: steps.check.outputs.signing == 'true'
+        env:
+          TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          flutter pub get
+          flutter build ipa --release \
+            --export-options-plist=ios/ExportOptions.plist \
+            --build-number=${{ github.run_number }}
+          ls -la build/ios/ipa
+      - uses: actions/upload-artifact@v4
+        if: steps.check.outputs.signing == 'true'
+        with:
+          name: ios-signed-ipa
+          path: build/ios/ipa/*.ipa
+      - name: Upload to TestFlight
+        if: steps.check.outputs.signing == 'true' && steps.check.outputs.asc == 'true' && (github.event.inputs.upload_testflight == 'true' || startsWith(github.ref, 'refs/tags/v'))
+        env:
+          ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          set -e
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo -n "$PRIVATE_KEY" > ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8
+          IPA=$(ls build/ios/ipa/*.ipa | head -1)
+          xcrun altool --upload-app --type ios --file "$IPA" \
+            --apiKey "$KEY_ID" --apiIssuer "$ISSUER_ID"
+      - name: Cleanup keychain
+        if: always() && steps.check.outputs.signing == 'true'
+        run: security delete-keychain "$RUNNER_TEMP/build.keychain-db" || true

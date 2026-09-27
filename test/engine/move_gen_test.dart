@@ -11,8 +11,11 @@ GameState _start({
   PlayerColor first = PlayerColor.white,
   CardPlacement placement = _placement,
   RuleOptions options = RuleOptions.standard,
-}) =>
-    GameState.initial(firstPlayer: first, placement: placement, options: options);
+}) => GameState.initial(
+  firstPlayer: first,
+  placement: placement,
+  options: options,
+);
 
 /// 기보 문자열로 여러 수를 연달아 둔다.
 GameState _play(GameState s, String moves) {
@@ -112,7 +115,10 @@ void main() {
       // 흑 차례: 흑 어태커는 손에 없음. 흑이 비숍을 둔 뒤 백 차례.
       s = _play(s, 'Ba3→b4');
       // 백 손: R, J. 대기: B.
-      expect(s.hand(PlayerColor.white).toSet(), {CardType.rook, CardType.jumper});
+      expect(s.hand(PlayerColor.white).toSet(), {
+        CardType.rook,
+        CardType.jumper,
+      });
     });
 
     test('직진 2칸은 중간 칸이 막히면 불가', () {
@@ -143,7 +149,10 @@ void main() {
       expect(p?.owner, PlayerColor.white);
       expect(p?.facing, Facing.plusFile);
       s = _play(s, 'Rd4→d3');
-      expect(s.hand(PlayerColor.white).toSet(), {CardType.attacker, CardType.knight});
+      expect(s.hand(PlayerColor.white).toSet(), {
+        CardType.attacker,
+        CardType.knight,
+      });
       // a2에서 전진은 +file: b2, c2, 대각 b1, b3.
       expect(_targets(s, CardType.attacker, 'a2'), {'b2', 'c2', 'b1', 'b3'});
     });
@@ -172,7 +181,10 @@ void main() {
         // 백 R,J | N | 흑 B,A
         s = _play(s, 'Re3→d3 Aa3→b3 Ne4→c3 Ba5→b4');
         // 백 손: J,R. c3 주변: b3(흑), b4(흑), d3(백).
-        expect(s.hand(PlayerColor.white).toSet(), {CardType.jumper, CardType.attacker});
+        expect(s.hand(PlayerColor.white).toSet(), {
+          CardType.jumper,
+          CardType.attacker,
+        });
         return s;
       }
 
@@ -184,7 +196,9 @@ void main() {
 
     test('점퍼로 상대 말을 잡을 수 있다', () {
       final s = originalSet1.replayAll()[8];
-      final m = s.legalMovesWith(CardType.jumper).firstWhere(
+      final m = s
+          .legalMovesWith(CardType.jumper)
+          .firstWhere(
             (m) => m.from == Pos.parse('e2') && m.to == Pos.parse('c4'),
           );
       expect(m.capture, isTrue);
@@ -203,9 +217,15 @@ void main() {
       // 8개를 잡아 2개가 되는 긴 시나리오 대신 1세트 기보 마지막 국면(백2:흑1)을 이용.
       s = originalSet1.replayAll()[22];
       expect(s.totalPieces, 3);
-      expect(s.hand(PlayerColor.white).toSet(), {CardType.rook, CardType.knight});
+      expect(s.hand(PlayerColor.white).toSet(), {
+        CardType.rook,
+        CardType.knight,
+      });
       expect(s.waiting, CardType.bishop);
-      expect(s.hand(PlayerColor.black).toSet(), {CardType.jumper, CardType.attacker});
+      expect(s.hand(PlayerColor.black).toSet(), {
+        CardType.jumper,
+        CardType.attacker,
+      });
       // 백이 잡지 않고 다른 수를 두면 3개 유지. 흑이 백을 잡으면 2개 → 퀸.
       // 백: Re? 백 말 d1, d2. Rd2→c2 (d1은 d2 아래).
       s = s.apply(Move.parse('Rd2→c2'));
@@ -214,14 +234,16 @@ void main() {
       s = s.apply(Move.parse('Ab2→c2x'));
       expect(s.totalPieces, 2);
       expect(s.hand(PlayerColor.black), isNot(contains(CardType.jumper)));
-      expect(
-        {...s.hand(PlayerColor.white), ...s.hand(PlayerColor.black), s.waiting},
-        contains(CardType.queen),
-      );
-      expect(
-        {...s.hand(PlayerColor.white), ...s.hand(PlayerColor.black), s.waiting},
-        isNot(contains(CardType.jumper)),
-      );
+      expect({
+        ...s.hand(PlayerColor.white),
+        ...s.hand(PlayerColor.black),
+        s.waiting,
+      }, contains(CardType.queen));
+      expect({
+        ...s.hand(PlayerColor.white),
+        ...s.hand(PlayerColor.black),
+        s.waiting,
+      }, isNot(contains(CardType.jumper)));
     });
   });
 

@@ -14,7 +14,8 @@ enum PlayerColor {
   int get homeFile => this == white ? 4 : 0;
 
   /// 초기 바라보는 방향.
-  Facing get initialFacing => this == white ? Facing.minusFile : Facing.plusFile;
+  Facing get initialFacing =>
+      this == white ? Facing.minusFile : Facing.plusFile;
 
   /// 성의 위치. 시작 줄의 중앙 칸.
   Pos get castle => Pos(homeFile, 2);
@@ -43,15 +44,14 @@ enum CardType {
 
   /// 카드의 이동 규칙 설명.
   String get description => switch (this) {
-        rook => '상하좌우 방향으로 한 칸 이동한다.',
-        bishop => '대각선 네 방향으로 한 칸 이동한다.',
-        attacker =>
-          '바라보는 방향으로 직진 최대 두 칸, 또는 전방 대각선 두 방향으로 한 칸 이동한다. 경로에 다른 말이 있으면 뛰어넘을 수 없다.',
-        knight => '상하좌우로 두 칸 직진 후 수직 방향으로 한 칸 이동한다. 다른 말을 뛰어넘을 수 있다.',
-        jumper =>
-          '인접한 8칸에 자기 말이 있을 때만 그 말을 뛰어넘어 이동한다. 보드 위에 말이 두 개만 남으면 즉시 퀸으로 바뀐다.',
-        queen => '상하좌우 및 대각선 방향으로 한 칸 이동한다.',
-      };
+    rook => '상하좌우 방향으로 한 칸 이동한다.',
+    bishop => '대각선 네 방향으로 한 칸 이동한다.',
+    attacker => '바라보는 방향으로 직진 최대 두 칸, 또는 전방 대각선 두 방향으로 한 칸 이동한다. 경로에 다른 말이 있으면 뛰어넘을 수 없다.',
+    knight => '상하좌우로 두 칸 직진 후 수직 방향으로 한 칸 이동한다. 다른 말을 뛰어넘을 수 있다.',
+    jumper =>
+      '인접한 8칸에 자기 말이 있을 때만 그 말을 뛰어넘어 이동한다. 보드 위에 말이 두 개만 남으면 즉시 퀸으로 바뀐다.',
+    queen => '상하좌우 및 대각선 방향으로 한 칸 이동한다.',
+  };
 }
 
 /// 세트 시작 시 사용하는 5장.
@@ -155,10 +155,7 @@ class Move {
     this.capture = false,
   });
 
-  const Move.pass(this.card)
-      : from = null,
-        to = null,
-        capture = false;
+  const Move.pass(this.card) : from = null, to = null, capture = false;
 
   final CardType card;
   final Pos? from;
@@ -298,11 +295,13 @@ class CardPlacement {
             for (var k = 0; k < 3; k++)
               if (k != w) rest[k],
           ];
-          result.add(CardPlacement(
-            firstPlayerHand: first,
-            secondPlayerHand: second,
-            waiting: rest[w],
-          ));
+          result.add(
+            CardPlacement(
+              firstPlayerHand: first,
+              secondPlayerHand: second,
+              waiting: rest[w],
+            ),
+          );
         }
       }
     }
