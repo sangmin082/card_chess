@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'state/app_settings.dart';
 import 'ui/home_screen.dart';
 import 'ui/theme.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AppSettings.instance.load();
   runApp(const CardChessApp());
 }
 

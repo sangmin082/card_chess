@@ -210,6 +210,12 @@ class GameState {
     placement: placement,
   );
 
+  /// [loser]가 기권한 상태.
+  GameState resign(PlayerColor loser) {
+    if (isOver) throw StateError('이미 끝난 게임입니다.');
+    return _withResult(GameResult(loser.opponent, WinReason.resign));
+  }
+
   /// 직전 수를 되돌린 상태. 처음부터 다시 재생한다.
   GameState? undo({int count = 1}) {
     if (history.length < count) return null;

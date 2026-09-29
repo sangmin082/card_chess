@@ -212,7 +212,10 @@ enum WinReason {
   castle('성 점령'),
 
   /// 상대가 둘 수 있는 수가 없음 (noMovePolicy = lose 인 경우).
-  noMoves('착수 불가');
+  noMoves('착수 불가'),
+
+  /// 상대가 기권.
+  resign('기권');
 
   const WinReason(this.korean);
   final String korean;

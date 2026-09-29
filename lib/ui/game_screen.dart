@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../engine/engine.dart';
+import '../state/app_settings.dart';
 import '../state/game_controller.dart';
 import '../state/kifu_store.dart';
 import 'setup_screen.dart';
@@ -120,6 +121,34 @@ class _GameScreenState extends State<GameScreen> {
         .showSnackBar(const SnackBar(content: Text('기보를 복사했습니다.')));
   }
 
+  Future<void> _confirmResign() async {
+    final g = c.game;
+    if (g == null || g.isOver) return;
+    // AI 대전에서는 사람이, 로컬 대전에서는 현재 차례가 기권한다.
+    final who = switch (c.mode) {
+      AiMode(:final humanColor) => humanColor,
+      _ => g.toMove,
+    };
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('기권'),
+        content: Text('${c.nameOf(who)}(${who.korean})이 이번 세트를 기권합니다. 계속할까요?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('기권'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) c.resign(who);
+  }
+
   Future<void> _onTapSquare(Pos p) async {
     final candidates = c.tapSquare(p);
     if (candidates.length < 2) return;
@@ -202,6 +231,12 @@ class _GameScreenState extends State<GameScreen> {
             onPressed: () => _copyKifu(context),
             icon: const Icon(Icons.content_copy),
           ),
+          if (!g.isOver)
+            IconButton(
+              tooltip: '기권',
+              onPressed: _confirmResign,
+              icon: const Icon(Icons.flag),
+            ),
         ],
       ),
       body: SafeArea(
@@ -213,7 +248,9 @@ class _GameScreenState extends State<GameScreen> {
               child: BoardWidget(
                 state: g,
                 selectedFrom: c.selectedFrom,
-                movable: c.movablePieces,
+                movable: AppSettings.instance.showHints
+                    ? c.movablePieces
+                    : const {},
                 targets: c.highlightedMoves,
                 lastMove: c.lastMove,
                 onTap: _onTapSquare,

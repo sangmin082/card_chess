@@ -3,11 +3,13 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../engine/engine.dart';
+import '../state/app_settings.dart';
 import '../state/game_controller.dart';
 import 'game_screen.dart';
 import 'replay_screen.dart';
 import 'rules_screen.dart';
 import 'saved_kifu_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -79,6 +81,17 @@ class HomeScreen extends StatelessWidget {
                     icon: const Icon(Icons.menu_book),
                     label: const Text('규칙'),
                   ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const SettingsScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.settings),
+                    label: const Text('설정'),
+                  ),
                 ],
               ),
             ),
@@ -93,14 +106,21 @@ class HomeScreen extends StatelessWidget {
     if (first == null || !context.mounted) return;
     _push(
       context,
-      GameController(mode: const LocalMode(), firstPlayerOfSet1: first),
+      GameController(
+        mode: const LocalMode(),
+        firstPlayerOfSet1: first,
+        options: AppSettings.instance.ruleOptions,
+        allowUndo: AppSettings.instance.allowUndo,
+        haptics: AppSettings.instance.haptics,
+      ),
     );
   }
 
   Future<void> _startAi(BuildContext context) async {
     final cfg = await showDialog<_AiConfig>(
       context: context,
-      builder: (_) => const _AiConfigDialog(),
+      builder: (_) =>
+          _AiConfigDialog(initialLevel: AppSettings.instance.aiLevel),
     );
     if (cfg == null || !context.mounted) return;
     final first = switch (cfg.first) {
@@ -114,6 +134,9 @@ class HomeScreen extends StatelessWidget {
       GameController(
         mode: AiMode(level: cfg.level, humanColor: cfg.humanColor),
         firstPlayerOfSet1: first,
+        options: AppSettings.instance.ruleOptions,
+        allowUndo: AppSettings.instance.allowUndo,
+        haptics: AppSettings.instance.haptics,
         names: {
           cfg.humanColor: '나',
           cfg.humanColor.opponent: 'AI(${cfg.level.korean})',
@@ -192,14 +215,16 @@ class _AiConfig {
 }
 
 class _AiConfigDialog extends StatefulWidget {
-  const _AiConfigDialog();
+  const _AiConfigDialog({required this.initialLevel});
+
+  final AiLevel initialLevel;
 
   @override
   State<_AiConfigDialog> createState() => _AiConfigDialogState();
 }
 
 class _AiConfigDialogState extends State<_AiConfigDialog> {
-  AiLevel _level = AiLevel.normal;
+  late AiLevel _level = widget.initialLevel;
   PlayerColor _color = PlayerColor.white;
   _First _first = _First.random;
 

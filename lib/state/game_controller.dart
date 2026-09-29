@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 import '../engine/engine.dart';
 
@@ -61,6 +62,7 @@ class GameController extends ChangeNotifier {
     Map<PlayerColor, String>? names,
     RuleOptions options = RuleOptions.standard,
     this.allowUndo = true,
+    this.haptics = true,
     Random? random,
   }) : _random = random ?? Random(),
        match = MatchState(
@@ -85,6 +87,7 @@ class GameController extends ChangeNotifier {
   final GameMode mode;
   final MatchState match;
   final bool allowUndo;
+  final bool haptics;
   final Random _random;
 
   Phase phase = Phase.placement;
@@ -233,6 +236,25 @@ class GameController extends ChangeNotifier {
     if (g == null || g.isOver) return;
     game = g.apply(move);
     lastMove = move;
+    selectedCard = null;
+    selectedFrom = null;
+    if (haptics) {
+      if (move.capture) {
+        HapticFeedback.mediumImpact();
+      } else {
+        HapticFeedback.selectionClick();
+      }
+    }
+    _afterMove();
+  }
+
+  /// [color]가 기권한다. 세트가 즉시 끝난다.
+  void resign(PlayerColor color) {
+    final g = game;
+    if (g == null || g.isOver || phase != Phase.playing) return;
+    _aiToken++;
+    aiThinking = false;
+    game = g.resign(color);
     selectedCard = null;
     selectedFrom = null;
     _afterMove();
