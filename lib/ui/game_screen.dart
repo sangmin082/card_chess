@@ -217,9 +217,7 @@ class _GameScreenState extends State<GameScreen> {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          '${c.match.sets.length + (g.isOver ? 0 : 1)}세트 · ${c.mode.label}',
-        ),
+        title: Text('${c.match.sets.length + (g.isOver ? 0 : 1)}세트'),
         actions: [
           IconButton(
             tooltip: '무르기',
@@ -231,6 +229,18 @@ class _GameScreenState extends State<GameScreen> {
             onPressed: () => _copyKifu(context),
             icon: const Icon(Icons.content_copy),
           ),
+          if (!g.isOver && c.mode is AiMode)
+            IconButton(
+              tooltip: 'AI 힌트',
+              onPressed: c.isHumanTurn && !c.hintLoading ? c.requestHint : null,
+              icon: c.hintLoading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.lightbulb_outline),
+            ),
           if (!g.isOver)
             IconButton(
               tooltip: '기권',
@@ -253,6 +263,7 @@ class _GameScreenState extends State<GameScreen> {
                     : const {},
                 targets: c.highlightedMoves,
                 lastMove: c.lastMove,
+                hint: c.hintMove,
                 onTap: _onTapSquare,
               ),
             );
@@ -299,6 +310,8 @@ class _GameScreenState extends State<GameScreen> {
       text = '${c.nameOf(g.result!.winner)} 승리 · ${g.result!.reason.korean}';
     } else if (c.aiThinking) {
       text = 'AI 생각 중…';
+    } else if (c.hintMove != null) {
+      text = '추천 수: ${c.hintMove!.notation}';
     } else if (c.mustPass) {
       text = '둘 수 있는 수가 없습니다. 교환할 카드를 고르세요.';
     } else if (c.selectedCard == null && c.selectedFrom == null) {

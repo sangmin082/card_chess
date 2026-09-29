@@ -100,6 +100,10 @@ class GameController extends ChangeNotifier {
   bool aiThinking = false;
   int _aiToken = 0;
 
+  /// AI 가 추천한 수. 사용자가 다음 행동을 하면 사라진다.
+  Move? hintMove;
+  bool hintLoading = false;
+
   String nameOf(PlayerColor c) => match.playerNames[c] ?? c.korean;
 
   PlayerColor get placer => match.nextCardPlacer;
@@ -194,8 +198,35 @@ class GameController extends ChangeNotifier {
   bool get mustPass =>
       isHumanTurn && _legal.isNotEmpty && _legal.every((m) => m.isPass);
 
+  /// 현재 국면에서 AI 추천 수를 계산해 [hintMove] 에 넣는다.
+  Future<void> requestHint() async {
+    final g = game;
+    if (g == null || g.isOver || !isHumanTurn || aiThinking || hintLoading) {
+      return;
+    }
+    hintLoading = true;
+    notifyListeners();
+    final token = ++_aiToken;
+    final move = await compute(
+      _moveEntry,
+      _MoveParams(AiLevel.hard, g, _random.nextInt(1 << 31)),
+    );
+    if (token != _aiToken || game != g) {
+      hintLoading = false;
+      return;
+    }
+    hintLoading = false;
+    hintMove = move;
+    if (move != null && !move.isPass) {
+      selectedCard = move.card;
+      selectedFrom = move.from;
+    }
+    notifyListeners();
+  }
+
   void selectCard(CardType card) {
     if (!isHumanTurn || aiThinking) return;
+    hintMove = null;
     if (selectedCard == card) {
       selectedCard = null;
     } else {
@@ -212,6 +243,7 @@ class GameController extends ChangeNotifier {
   /// 칸 탭 처리. 이동/선택/취소를 결정한다. 카드 선택이 모호하면 후보를 돌려준다.
   List<Move> tapSquare(Pos pos) {
     if (!isHumanTurn || aiThinking) return const [];
+    hintMove = null;
     final g = game!;
     final targets = highlightedMoves.where((m) => m.to == pos).toList();
     if (targets.isNotEmpty) {
@@ -238,6 +270,7 @@ class GameController extends ChangeNotifier {
     lastMove = move;
     selectedCard = null;
     selectedFrom = null;
+    hintMove = null;
     if (haptics) {
       if (move.capture) {
         HapticFeedback.mediumImpact();
@@ -305,6 +338,7 @@ class GameController extends ChangeNotifier {
     lastMove = back.history.isEmpty ? null : back.history.last;
     selectedCard = null;
     selectedFrom = null;
+    hintMove = null;
     notifyListeners();
   }
 

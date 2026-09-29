@@ -2,14 +2,18 @@
 
 피의 게임 파이널 3라운드 **카드 체스**를 Flutter 앱으로 구현한 프로젝트. iOS / Android / Web.
 
-| 홈 | 카드 배치 | 대전 | AI 대전 |
-|---|---|---|---|
-| ![home](docs/screenshots/home.png) | ![setup](docs/screenshots/setup.png) | ![game](docs/screenshots/game.png) | ![ai](docs/screenshots/ai.png) |
+| 홈 | 카드 배치 | 대전 |
+|---|---|---|
+| ![home](docs/screenshots/home.png) | ![setup](docs/screenshots/setup.png) | ![game](docs/screenshots/game.png) |
+
+| AI 대전 | AI 힌트 | 설정 |
+|---|---|---|
+| ![ai](docs/screenshots/ai.png) | ![hint](docs/screenshots/hint.png) | ![settings](docs/screenshots/settings.png) |
 
 ## 기능
 
 - 로컬 2인 대전 (한 기기에서 번갈아 플레이), 3세트 매치
-- AI 대전 (쉬움 / 보통 / 어려움) — 네가맥스 + 알파베타 탐색, 카드 배치까지 AI가 결정
+- AI 대전 (쉬움 / 보통 / 어려움) — 네가맥스 + 알파베타 탐색, 카드 배치까지 AI가 결정. AI 힌트(추천 수) 제공
 - 후공의 카드 배치 화면 (탭 / 드래그)
 - 원작 기보(1세트 23수, 2세트 22수) 재생
 - 기보 자동 저장 / 목록 / 붙여넣기, 기보 복사(텍스트), 무르기, 기권, 규칙 화면

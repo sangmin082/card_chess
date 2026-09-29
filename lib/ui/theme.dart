@@ -10,6 +10,7 @@ class AppColors {
   static const capture = Color(0x99D32F2F);
   static const selected = Color(0xAAFFC107);
   static const lastMove = Color(0x553F51B5);
+  static const hint = Color(0xFF29B6F6);
 }
 
 ThemeData buildTheme() {

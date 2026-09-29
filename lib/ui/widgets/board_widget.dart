@@ -14,6 +14,7 @@ class BoardWidget extends StatefulWidget {
     this.movable = const {},
     this.targets = const [],
     this.lastMove,
+    this.hint,
     this.onTap,
     this.showCoordinates = true,
   });
@@ -23,6 +24,9 @@ class BoardWidget extends StatefulWidget {
   final Set<Pos> movable;
   final List<Move> targets;
   final Move? lastMove;
+
+  /// AI 추천 수. 출발/도착 칸에 점선 테두리를 그린다.
+  final Move? hint;
   final ValueChanged<Pos>? onTap;
   final bool showCoordinates;
 
@@ -148,6 +152,10 @@ class _BoardWidgetState extends State<BoardWidget> {
           widget.lastMove != null &&
           !widget.lastMove!.isPass &&
           (widget.lastMove!.from == p || widget.lastMove!.to == p);
+      final isHint =
+          widget.hint != null &&
+          !widget.hint!.isPass &&
+          (widget.hint!.from == p || widget.hint!.to == p);
       final o = _offsetOf(p, cell);
       squares.add(
         Positioned(
@@ -175,6 +183,17 @@ class _BoardWidgetState extends State<BoardWidget> {
                       ),
                     ),
                   if (isLast) Container(color: AppColors.lastMove),
+                  if (isHint)
+                    Container(
+                      margin: EdgeInsets.all(cell * 0.06),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: AppColors.hint,
+                          width: cell * 0.07,
+                        ),
+                        borderRadius: BorderRadius.circular(cell * 0.12),
+                      ),
+                    ),
                   if (widget.selectedFrom == p)
                     Container(color: AppColors.selected),
                   if (widget.movable.contains(p) && widget.selectedFrom != p)
