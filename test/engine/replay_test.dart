@@ -168,6 +168,35 @@ void main() {
       }
     });
 
+    test('하우스룰이 기보에 저장되고 같은 규칙으로 재생된다', () {
+      const house = RuleOptions(jumperOverEnemy: true);
+      var s = GameState.initial(
+        firstPlayer: PlayerColor.white,
+        placement: const CardPlacement(
+          firstPlayerHand: [CardType.rook, CardType.jumper],
+          secondPlayerHand: [CardType.bishop, CardType.attacker],
+          waiting: CardType.knight,
+        ),
+        options: house,
+      );
+      // 상대 말을 넘는 점퍼 수가 포함된 수순.
+      for (final m in 'Re3→d3 Aa3→b3 Ne4→c3 Ba5→b4 Jc3→a3'.split(' ')) {
+        s = s.apply(Move.parse(m));
+      }
+      final text = KifuSet.fromState(s, title: 'house').serialize();
+      expect(text, contains('jumperOverEnemy=true'));
+      final parsed = KifuSet.parse(text);
+      expect(parsed.options.jumperOverEnemy, isTrue);
+      expect(parsed.replayAll().last.squares, s.squares);
+      // 표준 규칙으로 재생하면 불법 수.
+      expect(
+        () => parsed.replayAll(options: RuleOptions.standard),
+        throwsArgumentError,
+      );
+      // 표준 규칙 기보에는 options 줄이 없다.
+      expect(originalSet1.serialize(), isNot(contains('options:')));
+    });
+
     test('GameState → KifuSet → 재생 결과 동일', () {
       final last = originalSet2.replayAll().last;
       final kifu = KifuSet.fromState(last, title: 'copy');

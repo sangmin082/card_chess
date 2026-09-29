@@ -213,6 +213,7 @@ class GameController extends ChangeNotifier {
     );
     if (token != _aiToken || game != g) {
       hintLoading = false;
+      notifyListeners();
       return;
     }
     hintLoading = false;
@@ -334,6 +335,8 @@ class GameController extends ChangeNotifier {
     final steps = mode is AiMode ? 2 : 1;
     final back = game!.undo(count: steps);
     if (back == null) return;
+    _aiToken++; // 계산 중인 힌트는 버린다.
+    hintLoading = false;
     game = back;
     lastMove = back.history.isEmpty ? null : back.history.last;
     selectedCard = null;

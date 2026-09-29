@@ -52,13 +52,14 @@ class _ReplayScreenState extends State<ReplayScreen> {
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
-            Slider(
-              value: _index.toDouble(),
-              min: 0,
-              max: (_states.length - 1).toDouble(),
-              divisions: _states.length - 1,
-              onChanged: (v) => _go(v.round()),
-            ),
+            if (_states.length > 1)
+              Slider(
+                value: _index.toDouble(),
+                min: 0,
+                max: (_states.length - 1).toDouble(),
+                divisions: _states.length - 1,
+                onChanged: (v) => _go(v.round()),
+              ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

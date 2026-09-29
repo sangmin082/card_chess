@@ -33,6 +33,7 @@ Set<String> _targets(GameState s, CardType card, String from) => s
     .toSet();
 
 void main() {
+  _resignTests();
   group('시작 배치', () {
     test('백은 e열, 흑은 a열, 성은 e3/a3', () {
       final s = _start();
@@ -306,6 +307,26 @@ void main() {
       final moves = s.legalMoves();
       expect(moves, isNotEmpty);
       expect(moves.every((m) => !m.isPass), isTrue);
+    });
+  });
+}
+
+void _resignTests() {
+  group('기권', () {
+    test('기권하면 상대가 즉시 승리한다', () {
+      final s = _start();
+      final r = s.resign(PlayerColor.white);
+      expect(r.isOver, isTrue);
+      expect(r.result, const GameResult(PlayerColor.black, WinReason.resign));
+      expect(() => r.resign(PlayerColor.black), throwsStateError);
+      expect(r.legalMoves(), isEmpty);
+    });
+
+    test('기권한 세트도 기보로 직렬화된다', () {
+      final s = _play(_start(), 'Re3→d3 Ba3→b4').resign(PlayerColor.black);
+      final k = KifuSet.fromState(s);
+      expect(k.winner, PlayerColor.white);
+      expect(KifuSet.parse(k.serialize()).moves.length, 2);
     });
   });
 }

@@ -13,6 +13,7 @@ class KifuSet {
     required this.moves,
     this.winner,
     this.playerNames = const {},
+    this.options = RuleOptions.standard,
   });
 
   final String title;
@@ -22,15 +23,17 @@ class KifuSet {
   final PlayerColor? winner;
   final Map<PlayerColor, String> playerNames;
 
-  GameState initialState({RuleOptions options = RuleOptions.standard}) =>
-      GameState.initial(
-        firstPlayer: firstPlayer,
-        placement: placement,
-        options: options,
-      );
+  /// 이 기보가 두어진 하우스룰. 재생 시 같은 규칙을 쓴다.
+  final RuleOptions options;
+
+  GameState initialState({RuleOptions? options}) => GameState.initial(
+    firstPlayer: firstPlayer,
+    placement: placement,
+    options: options ?? this.options,
+  );
 
   /// 처음부터 끝까지 재생하며 각 단계 상태를 돌려준다. 첫 원소는 시작 상태.
-  List<GameState> replayAll({RuleOptions options = RuleOptions.standard}) {
+  List<GameState> replayAll({RuleOptions? options}) {
     final states = <GameState>[initialState(options: options)];
     for (final move in moves) {
       states.add(states.last.apply(move));
@@ -46,6 +49,7 @@ class KifuSet {
   /// black: B,A
   /// waiting: N
   /// names: white=강지후, black=윤비
+  /// options: jumperOverEnemy=true, noMovePolicy=lose   (생략 시 표준 규칙)
   /// moves: Re3→d3 Ba4→b3 ...
   /// winner: white
   /// ```
@@ -58,6 +62,8 @@ class KifuSet {
     CardType? waiting;
     final moves = <Move>[];
     final names = <PlayerColor, String>{};
+    var jumperOverEnemy = false;
+    var noMovePolicy = NoMovePolicy.pass;
 
     List<CardType> cards(String v) => v
         .split(',')
@@ -98,6 +104,22 @@ class KifuSet {
             if (eq < 0) continue;
             names[color(part.substring(0, eq))] = part.substring(eq + 1).trim();
           }
+        case 'options':
+          for (final part in value.split(',')) {
+            final eq = part.indexOf('=');
+            if (eq < 0) continue;
+            final k = part.substring(0, eq).trim();
+            final v = part.substring(eq + 1).trim().toLowerCase();
+            switch (k) {
+              case 'jumperOverEnemy':
+                jumperOverEnemy = v == 'true';
+              case 'noMovePolicy':
+                noMovePolicy = NoMovePolicy.values.firstWhere(
+                  (e) => e.name == v,
+                  orElse: () => NoMovePolicy.pass,
+                );
+            }
+          }
         case 'moves':
           for (final tok in value.split(RegExp(r'\s+'))) {
             if (tok.isEmpty) continue;
@@ -123,6 +145,10 @@ class KifuSet {
       moves: moves,
       winner: winner,
       playerNames: names,
+      options: RuleOptions(
+        jumperOverEnemy: jumperOverEnemy,
+        noMovePolicy: noMovePolicy,
+      ),
     );
   }
 
@@ -138,6 +164,12 @@ class KifuSet {
     if (playerNames.isNotEmpty) {
       b.writeln(
         'names: ${playerNames.entries.map((e) => '${e.key.name}=${e.value}').join(', ')}',
+      );
+    }
+    if (options.jumperOverEnemy || options.noMovePolicy != NoMovePolicy.pass) {
+      b.writeln(
+        'options: jumperOverEnemy=${options.jumperOverEnemy}, '
+        'noMovePolicy=${options.noMovePolicy.name}',
       );
     }
     b.writeln('moves: ${moves.map((m) => m.notation).join(' ')}');
@@ -158,6 +190,7 @@ class KifuSet {
       moves: state.history,
       winner: state.result?.winner,
       playerNames: playerNames,
+      options: state.options,
     );
   }
 }
