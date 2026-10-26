@@ -46,3 +46,6 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# CI 에서 생성하는 서명 파일
+ios/ExportOptions*.plist
