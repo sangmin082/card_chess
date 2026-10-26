@@ -48,7 +48,7 @@ class KifuSet {
   /// white: R,J
   /// black: B,A
   /// waiting: N
-  /// names: white=강지후, black=윤비
+  /// names: white=나, black=친구
   /// options: jumperOverEnemy=true, noMovePolicy=lose   (생략 시 표준 규칙)
   /// moves: Re3→d3 Ba4→b3 ...
   /// winner: white

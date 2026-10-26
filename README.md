@@ -61,4 +61,6 @@ flutter run -d chrome   # 웹으로 실행
 | `ios-signing-setup.yml` | ubuntu | App Store Connect API 로 인증서·프로파일을 만들어 시크릿에 저장 (수동 실행) |
 | `pages.yml` | ubuntu | GitHub Pages 웹 배포 (Settings → Pages → Source: GitHub Actions) |
 
+App Store 심사 제출 절차와 입력 문구는 [docs/APP_STORE.md](docs/APP_STORE.md) 참고.
+
 맥 없이 iPhone 에 설치하는 절차(API 키 → 시크릿 → 서명 자동 설정 → TestFlight)는 [docs/IOS_BUILD.md](docs/IOS_BUILD.md) 참고.

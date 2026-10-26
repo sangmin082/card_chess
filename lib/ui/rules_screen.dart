@@ -87,7 +87,7 @@ class RulesScreen extends StatelessWidget {
           const SizedBox(height: 8),
           section(
             '이 앱의 해석',
-            '· 점퍼는 자기 말만 뛰어넘는다 (원작 해설 근거).\n'
+            '· 점퍼는 자기 말만 뛰어넘는다.\n'
                 '· 방향 전환은 끝 줄에 도착할 때마다 반복된다.\n'
                 '· 두 카드 모두 둘 수 없으면 카드 한 장을 대기 존과 교환하고 턴을 넘긴다.\n'
                 '· 다이어그램의 위쪽이 말이 바라보는 방향이다.',

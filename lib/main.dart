@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'state/app_settings.dart';
 import 'ui/home_screen.dart';
@@ -6,6 +7,7 @@ import 'ui/theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await AppSettings.instance.load();
   runApp(const CardChessApp());
 }

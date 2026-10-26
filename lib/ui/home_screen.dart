@@ -120,7 +120,7 @@ class _HomeMenu extends StatelessWidget {
                     OutlinedButton.icon(
                       onPressed: () => _openReplay(context),
                       icon: const Icon(Icons.history),
-                      label: const Text('원작 기보 보기'),
+                      label: const Text('예제 기보 보기'),
                     ),
                     const SizedBox(height: 12),
                     OutlinedButton.icon(
@@ -248,14 +248,13 @@ class _HomeMenu extends StatelessWidget {
     final kifu = await showDialog<KifuSet>(
       context: context,
       builder: (ctx) => SimpleDialog(
-        title: const Text('원작 기보'),
+        title: const Text('예제 기보'),
         children: [
           for (final k in originalGames)
             SimpleDialogOption(
               onPressed: () => Navigator.pop(ctx, k),
               child: Text(
-                '${k.title} · ${k.playerNames[PlayerColor.white]}(백) vs '
-                '${k.playerNames[PlayerColor.black]}(흑) · ${k.moves.length}수',
+                '${k.title} · ${k.moves.length}수 · ${k.winner?.korean ?? '-'} 승',
               ),
             ),
         ],
