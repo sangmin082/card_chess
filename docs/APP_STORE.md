@@ -37,8 +37,18 @@
 앱의 버전은 **1.0.0** 이다. 페이지 왼쪽 위 버전이 `1.0` 이면 **1.0.0** 으로 바꿔야 빌드를 선택할 수 있다.
 
 ### 스크린샷
-"iPhone 6.9형 디스플레이" 칸에 `docs/appstore/screenshots-6.9/` 의 PNG 5장을 순서대로 끌어다 놓는다
-(1320×2868). 다른 크기는 자동으로 축소되어 쓰인다. 이 앱은 iPhone 전용이라 iPad 스크린샷은 필요 없다.
+App Store Connect 가 보여 주는 칸의 크기에 맞는 폴더를 고른다. 모두 투명 채널 없는 RGB PNG 이다.
+
+| App Store Connect 칸 | 폴더 | 크기 |
+|---|---|---|
+| 6.9형 (다이내믹 아일랜드, 큰 화면) | `docs/appstore/screenshots-6.9` | 1320×2868 |
+| 6.3형 (다이내믹 아일랜드, 중간 화면) | `docs/appstore/screenshots-6.3` | 1206×2622 |
+| 6.1형 대체 크기 | `docs/appstore/screenshots-6.1` | 1179×2556 |
+| 6.5형 (Face ID, 큰 화면) | `docs/appstore/screenshots-6.5` | 1284×2778 |
+
+GitHub 페이지에서 "다른 이름으로 저장" 을 하면 이미지가 아니라 웹페이지가 저장되어 업로드가 실패한다.
+`raw.githubusercontent.com` 링크를 열어 이미지를 저장하거나, 파일 페이지의 다운로드 버튼을 쓴다.
+이 앱은 iPhone 전용이라 iPad 스크린샷은 필요 없다.
 
 ### 프로모션 텍스트 (170자, 언제든 수정 가능)
 ```
