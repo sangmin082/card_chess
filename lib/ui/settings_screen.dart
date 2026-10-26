@@ -19,7 +19,7 @@ class SettingsScreen extends StatelessWidget {
             _header(context, '하우스룰'),
             SwitchListTile(
               title: const Text('점퍼가 상대 말도 넘을 수 있음'),
-              subtitle: const Text('원작 해석은 자기 말만 넘는다. 새 게임부터 적용.'),
+              subtitle: const Text('기본 규칙은 자기 말만 넘는다. 새 게임부터 적용.'),
               value: s.jumperOverEnemy,
               onChanged: (v) => s.update((x) => x.jumperOverEnemy = v),
             ),

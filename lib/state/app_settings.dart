@@ -15,6 +15,7 @@ class AppSettings extends ChangeNotifier {
   static const _kHaptics = 'ui.haptics';
   static const _kAiLevel = 'ai.level';
   static const _kShowHints = 'ui.showHints';
+  static const _kTutorialSeen = 'ui.tutorialSeen';
 
   bool jumperOverEnemy = false;
   NoMovePolicy noMovePolicy = NoMovePolicy.pass;
@@ -22,6 +23,9 @@ class AppSettings extends ChangeNotifier {
   bool haptics = true;
   bool showHints = true;
   AiLevel aiLevel = AiLevel.normal;
+
+  /// 튜토리얼을 열어 본 적이 있는지. 처음 실행 때 안내에 쓴다.
+  bool tutorialSeen = false;
 
   bool _loaded = false;
   bool get loaded => _loaded;
@@ -43,6 +47,7 @@ class AppSettings extends ChangeNotifier {
       allowUndo = p.getBool(_kAllowUndo) ?? allowUndo;
       haptics = p.getBool(_kHaptics) ?? haptics;
       showHints = p.getBool(_kShowHints) ?? showHints;
+      tutorialSeen = p.getBool(_kTutorialSeen) ?? tutorialSeen;
       final level = p.getString(_kAiLevel);
       if (level != null) {
         aiLevel = AiLevel.values.firstWhere(
@@ -65,6 +70,7 @@ class AppSettings extends ChangeNotifier {
       await p.setBool(_kAllowUndo, allowUndo);
       await p.setBool(_kHaptics, haptics);
       await p.setBool(_kShowHints, showHints);
+      await p.setBool(_kTutorialSeen, tutorialSeen);
       await p.setString(_kAiLevel, aiLevel.name);
     } catch (_) {}
   }

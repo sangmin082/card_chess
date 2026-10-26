@@ -5,7 +5,7 @@
     "display": "standalone",
     "background_color": "#18120F",
     "theme_color": "#8E0E0E",
-    "description": "피의 게임 카드 체스",
+    "description": "카드로 말을 움직이는 5x5 전략 보드게임",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

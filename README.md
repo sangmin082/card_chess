@@ -6,12 +6,13 @@
 |---|---|---|
 | ![home](docs/screenshots/home.png) | ![setup](docs/screenshots/setup.png) | ![game](docs/screenshots/game.png) |
 
-| AI 대전 | AI 힌트 | 설정 |
-|---|---|---|
-| ![ai](docs/screenshots/ai.png) | ![hint](docs/screenshots/hint.png) | ![settings](docs/screenshots/settings.png) |
+| AI 대전 | AI 힌트 | 설정 | 튜토리얼 |
+|---|---|---|---|
+| ![ai](docs/screenshots/ai.png) | ![hint](docs/screenshots/hint.png) | ![settings](docs/screenshots/settings.png) | ![tutorial](docs/screenshots/tutorial.png) |
 
 ## 기능
 
+- 튜토리얼 14단계: 보드에서 직접 말을 움직이며 카드별 이동, 잡기, 방향 전환, 퀸, 승리 조건을 배운다. 처음 실행 때 안내
 - 로컬 2인 대전 (한 기기에서 번갈아 플레이), 3세트 매치
 - AI 대전 (쉬움 / 보통 / 어려움) — 네가맥스 + 알파베타 탐색, 카드 배치까지 AI가 결정. AI 힌트(추천 수) 제공
 - 후공의 카드 배치 화면 (탭 / 드래그)
@@ -59,5 +60,7 @@ flutter run -d chrome   # 웹으로 실행
 | `ios.yml` | macos | 서명 없는 IPA. 서명 시크릿이 있으면 App Store 서명 IPA + TestFlight 업로드 |
 | `ios-signing-setup.yml` | ubuntu | App Store Connect API 로 인증서·프로파일을 만들어 시크릿에 저장 (수동 실행) |
 | `pages.yml` | ubuntu | GitHub Pages 웹 배포 (Settings → Pages → Source: GitHub Actions) |
+
+App Store 심사 제출 절차와 입력 문구는 [docs/APP_STORE.md](docs/APP_STORE.md) 참고.
 
 맥 없이 iPhone 에 설치하는 절차(API 키 → 시크릿 → 서명 자동 설정 → TestFlight)는 [docs/IOS_BUILD.md](docs/IOS_BUILD.md) 참고.

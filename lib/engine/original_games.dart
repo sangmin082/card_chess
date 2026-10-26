@@ -1,15 +1,14 @@
-/// 원작(피의 게임 파이널 3R) 기보. 엔진 회귀 테스트와 앱 내 재생에 사용한다.
+/// 예제 기보 2세트. 엔진 회귀 테스트와 앱 내 기보 재생 예제로 쓴다.
 library;
 
 import 'kifu.dart';
 
 const String originalSet1Text = '''
-title: 1세트
+title: 예제 기보 1
 first: white
 white: R,J
 black: B,A
 waiting: N
-names: white=강지후, black=윤비
 moves: Re3→d3 Ba4→b3 Je5→e3 Ra5→b5 Be1→d2
   Ja2→c4 Ne3→c4x Bb5→c4x Je2→c4x Ab3→c4x
   Bd3→c4x Na3→b1 Re4→d4 Bb1→a2 Nd4→c2
@@ -19,12 +18,11 @@ winner: white
 ''';
 
 const String originalSet2Text = '''
-title: 2세트
+title: 예제 기보 2
 first: black
 black: J,A
 white: B,N
 waiting: R
-names: white=강지후, black=윤비
 moves: Aa3→b3 Be1→d2 Rb3→a3 Ne5→d3 Ba4→b5
   Re4→d4 Nb5→d4x Be3→d4x Ra3→a4 Ne2→c3
   Ba2→b3 Rc3→b3x Na1→b3x Ad3→b3x Ja5→a3

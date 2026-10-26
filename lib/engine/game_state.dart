@@ -17,6 +17,7 @@ class GameState {
     required this.options,
     required this.firstPlayer,
     required this.placement,
+    this.customStart,
   }) : squares = List.unmodifiable(squares),
        whiteHand = List.unmodifiable(whiteHand),
        blackHand = List.unmodifiable(blackHand),
@@ -59,6 +60,57 @@ class GameState {
     );
   }
 
+  /// 임의 국면에서 시작하는 상태. 튜토리얼과 퍼즐에 쓴다.
+  ///
+  /// 카드는 백 2장, 흑 2장, 대기 1장으로 서로 다른 5장이어야 한다.
+  /// 이 상태로 만든 기보는 표준 시작 배치가 아니므로 [KifuSet] 으로 저장하지 않는다.
+  factory GameState.custom({
+    required Map<Pos, Piece> pieces,
+    required PlayerColor toMove,
+    required List<CardType> whiteHand,
+    required List<CardType> blackHand,
+    required CardType waiting,
+    RuleOptions options = RuleOptions.standard,
+  }) {
+    final all = [...whiteHand, ...blackHand, waiting];
+    if (whiteHand.length != 2 ||
+        blackHand.length != 2 ||
+        all.toSet().length != 5) {
+      throw ArgumentError('카드는 백 2장, 흑 2장, 대기 1장으로 서로 달라야 합니다: $all');
+    }
+    final squares = List<Piece?>.filled(Pos.size * Pos.size, null);
+    pieces.forEach((pos, piece) {
+      if (!pos.onBoard) throw ArgumentError('보드 밖 좌표: $pos');
+      squares[pos.index] = piece;
+    });
+    CardType norm(CardType c) => c == CardType.queen ? CardType.jumper : c;
+    final mine = toMove == PlayerColor.white ? whiteHand : blackHand;
+    final theirs = toMove == PlayerColor.white ? blackHand : whiteHand;
+    return GameState._(
+      squares: squares,
+      toMove: toMove,
+      whiteHand: whiteHand,
+      blackHand: blackHand,
+      waiting: waiting,
+      history: const [],
+      result: null,
+      options: options,
+      firstPlayer: toMove,
+      placement: CardPlacement(
+        firstPlayerHand: mine.map(norm).toList(),
+        secondPlayerHand: theirs.map(norm).toList(),
+        waiting: norm(waiting),
+      ),
+      customStart: CustomStart(
+        Map.unmodifiable(pieces),
+        toMove,
+        List.unmodifiable(whiteHand),
+        List.unmodifiable(blackHand),
+        waiting,
+      ),
+    );
+  }
+
   /// 25칸. 인덱스는 [Pos.index].
   final List<Piece?> squares;
   final PlayerColor toMove;
@@ -72,6 +124,9 @@ class GameState {
 
   /// 세트 시작 시의 카드 배치.
   final CardPlacement placement;
+
+  /// [GameState.custom] 으로 만든 경우의 시작 국면. 표준 시작이면 null.
+  final CustomStart? customStart;
 
   bool get isOver => result != null;
 
@@ -187,6 +242,7 @@ class GameState {
       options: options,
       firstPlayer: firstPlayer,
       placement: placement,
+      customStart: customStart,
     );
 
     if (result == null &&
@@ -208,6 +264,7 @@ class GameState {
     options: options,
     firstPlayer: firstPlayer,
     placement: placement,
+    customStart: customStart,
   );
 
   /// [loser]가 기권한 상태.
@@ -234,11 +291,24 @@ class GameState {
   }
 
   /// [state]와 같은 설정의 시작 상태.
-  static GameState initialOf(GameState state) => GameState.initial(
-    firstPlayer: state.firstPlayer,
-    placement: state.placement,
-    options: state.options,
-  );
+  static GameState initialOf(GameState state) {
+    final c = state.customStart;
+    if (c != null) {
+      return GameState.custom(
+        pieces: c.pieces,
+        toMove: c.toMove,
+        whiteHand: c.whiteHand,
+        blackHand: c.blackHand,
+        waiting: c.waiting,
+        options: state.options,
+      );
+    }
+    return GameState.initial(
+      firstPlayer: state.firstPlayer,
+      placement: state.placement,
+      options: state.options,
+    );
+  }
 
   /// 디버그용 보드 문자열. 위가 a열(흑), 아래가 e열(백).
   String toBoardString() {
@@ -269,4 +339,21 @@ class GameState {
     );
     return b.toString();
   }
+}
+
+/// [GameState.custom] 의 시작 국면.
+class CustomStart {
+  const CustomStart(
+    this.pieces,
+    this.toMove,
+    this.whiteHand,
+    this.blackHand,
+    this.waiting,
+  );
+
+  final Map<Pos, Piece> pieces;
+  final PlayerColor toMove;
+  final List<CardType> whiteHand;
+  final List<CardType> blackHand;
+  final CardType waiting;
 }

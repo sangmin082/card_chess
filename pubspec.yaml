@@ -1,5 +1,5 @@
 name: card_chess
-description: "피의 게임 파이널 3R 카드 체스 앱"
+description: "카드로 말을 움직이는 5x5 전략 보드게임"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

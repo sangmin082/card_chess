@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../engine/engine.dart';
+import 'tutorial_screen.dart';
 import 'widgets/card_widget.dart';
 
 class RulesScreen extends StatelessWidget {
@@ -26,6 +27,15 @@ class RulesScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          FilledButton.tonalIcon(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(builder: (_) => const TutorialScreen()),
+            ),
+            icon: const Icon(Icons.school),
+            label: const Text('보드에서 직접 해 보며 배우기 (튜토리얼)'),
+          ),
+          const SizedBox(height: 20),
           section(
             '개요',
             '가로 5칸, 세로 5칸 보드에서 각자 말 5개를 사용한다. 말은 앞뒤가 구분되며, '
@@ -77,7 +87,7 @@ class RulesScreen extends StatelessWidget {
           const SizedBox(height: 8),
           section(
             '이 앱의 해석',
-            '· 점퍼는 자기 말만 뛰어넘는다 (원작 해설 근거).\n'
+            '· 점퍼는 자기 말만 뛰어넘는다.\n'
                 '· 방향 전환은 끝 줄에 도착할 때마다 반복된다.\n'
                 '· 두 카드 모두 둘 수 없으면 카드 한 장을 대기 존과 교환하고 턴을 넘긴다.\n'
                 '· 다이어그램의 위쪽이 말이 바라보는 방향이다.',
