@@ -6,12 +6,13 @@
 |---|---|---|
 | ![home](docs/screenshots/home.png) | ![setup](docs/screenshots/setup.png) | ![game](docs/screenshots/game.png) |
 
-| AI 대전 | AI 힌트 | 설정 |
-|---|---|---|
-| ![ai](docs/screenshots/ai.png) | ![hint](docs/screenshots/hint.png) | ![settings](docs/screenshots/settings.png) |
+| AI 대전 | AI 힌트 | 설정 | 튜토리얼 |
+|---|---|---|---|
+| ![ai](docs/screenshots/ai.png) | ![hint](docs/screenshots/hint.png) | ![settings](docs/screenshots/settings.png) | ![tutorial](docs/screenshots/tutorial.png) |
 
 ## 기능
 
+- 튜토리얼 14단계: 보드에서 직접 말을 움직이며 카드별 이동, 잡기, 방향 전환, 퀸, 승리 조건을 배운다. 처음 실행 때 안내
 - 로컬 2인 대전 (한 기기에서 번갈아 플레이), 3세트 매치
 - AI 대전 (쉬움 / 보통 / 어려움) — 네가맥스 + 알파베타 탐색, 카드 배치까지 AI가 결정. AI 힌트(추천 수) 제공
 - 후공의 카드 배치 화면 (탭 / 드래그)

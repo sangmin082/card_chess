@@ -10,9 +10,60 @@ import 'replay_screen.dart';
 import 'rules_screen.dart';
 import 'saved_kifu_screen.dart';
 import 'settings_screen.dart';
+import 'tutorial_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    if (!AppSettings.instance.tutorialSeen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _offerTutorial());
+    }
+  }
+
+  /// 처음 실행하면 튜토리얼을 권한다. 한 번만 묻는다.
+  Future<void> _offerTutorial() async {
+    if (!mounted) return;
+    AppSettings.instance.update((s) => s.tutorialSeen = true);
+    final go = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.school),
+        title: const Text('처음이신가요?'),
+        content: const Text('보드에서 직접 말을 움직이며 규칙을 배우는 튜토리얼이 있습니다. 5분이면 충분합니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('나중에'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('튜토리얼 시작'),
+          ),
+        ],
+      ),
+    );
+    if (go == true && mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const TutorialScreen()),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => const _HomeMenu();
+}
+
+class _HomeMenu extends StatelessWidget {
+  const _HomeMenu();
 
   @override
   Widget build(BuildContext context) {
@@ -20,79 +71,92 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Icon(Icons.castle, size: 72, color: scheme.primary),
-                  const SizedBox(height: 12),
-                  Text(
-                    '카드 체스',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    '카드의 이동 규칙에 따라 말을 옮겨 상대의 말을 모두 잡아라',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: scheme.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 36),
-                  FilledButton.icon(
-                    onPressed: () => _startAi(context),
-                    icon: const Icon(Icons.smart_toy),
-                    label: const Text('AI 대전'),
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton.tonalIcon(
-                    onPressed: () => _startLocal(context),
-                    icon: const Icon(Icons.people),
-                    label: const Text('로컬 2인 대전'),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: () => _openReplay(context),
-                    icon: const Icon(Icons.history),
-                    label: const Text('원작 기보 보기'),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) => const SavedKifuScreen(),
-                      ),
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Icon(Icons.castle, size: 72, color: scheme.primary),
+                    const SizedBox(height: 12),
+                    Text(
+                      '카드 체스',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
-                    icon: const Icon(Icons.save),
-                    label: const Text('저장된 기보'),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) => const RulesScreen(),
-                      ),
+                    Text(
+                      '카드의 이동 규칙에 따라 말을 옮겨 상대의 말을 모두 잡아라',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: scheme.onSurfaceVariant),
                     ),
-                    icon: const Icon(Icons.menu_book),
-                    label: const Text('규칙'),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) => const SettingsScreen(),
-                      ),
+                    const SizedBox(height: 36),
+                    FilledButton.icon(
+                      onPressed: () => _startAi(context),
+                      icon: const Icon(Icons.smart_toy),
+                      label: const Text('AI 대전'),
                     ),
-                    icon: const Icon(Icons.settings),
-                    label: const Text('설정'),
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    FilledButton.tonalIcon(
+                      onPressed: () => _startLocal(context),
+                      icon: const Icon(Icons.people),
+                      label: const Text('로컬 2인 대전'),
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton.tonalIcon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => const TutorialScreen(),
+                        ),
+                      ),
+                      icon: const Icon(Icons.school),
+                      label: const Text('튜토리얼'),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: () => _openReplay(context),
+                      icon: const Icon(Icons.history),
+                      label: const Text('원작 기보 보기'),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SavedKifuScreen(),
+                        ),
+                      ),
+                      icon: const Icon(Icons.save),
+                      label: const Text('저장된 기보'),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => const RulesScreen(),
+                        ),
+                      ),
+                      icon: const Icon(Icons.menu_book),
+                      label: const Text('규칙'),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SettingsScreen(),
+                        ),
+                      ),
+                      icon: const Icon(Icons.settings),
+                      label: const Text('설정'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

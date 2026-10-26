@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../engine/engine.dart';
+import 'tutorial_screen.dart';
 import 'widgets/card_widget.dart';
 
 class RulesScreen extends StatelessWidget {
@@ -26,6 +27,15 @@ class RulesScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          FilledButton.tonalIcon(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(builder: (_) => const TutorialScreen()),
+            ),
+            icon: const Icon(Icons.school),
+            label: const Text('보드에서 직접 해 보며 배우기 (튜토리얼)'),
+          ),
+          const SizedBox(height: 20),
           section(
             '개요',
             '가로 5칸, 세로 5칸 보드에서 각자 말 5개를 사용한다. 말은 앞뒤가 구분되며, '
