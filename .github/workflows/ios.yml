@@ -1,0 +1,208 @@
+# iOS 빌드 (macOS 러너). 맥 없이 iPhone 용 빌드를 만들고 TestFlight 에 올린다.
+#
+# unsigned : 항상 실행. 서명 없는 IPA 와 시뮬레이터 앱을 아티팩트로 남긴다 (빌드 검증용).
+# signed   : 서명 시크릿이 있으면 실행. App Store 서명 IPA 를 만든다.
+#            수동 실행(기본값: 업로드 켬)이나 v* 태그 push 때 TestFlight 에 업로드한다.
+#
+# 서명 시크릿은 "iOS Signing Setup" 워크플로우가 만들어 준다. 절차: docs/IOS_BUILD.md
+
+name: iOS
+
+on:
+  push:
+    branches: [main, master, 'claude/card-chess-app-plan-*']
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      upload_testflight:
+        description: 'TestFlight 에 업로드'
+        type: boolean
+        default: true
+
+env:
+  FLUTTER_VERSION: '3.47.5'
+
+jobs:
+  unsigned:
+    name: Build iOS (unsigned)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Build (no codesign)
+        run: flutter build ios --release --no-codesign
+      - name: Package unsigned IPA
+        run: |
+          set -e
+          mkdir -p build/ios/unsigned/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ios/unsigned/Payload/
+          cd build/ios/unsigned
+          zip -qr card_chess-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-unsigned-ipa
+          path: build/ios/unsigned/card_chess-unsigned.ipa
+          retention-days: 14
+
+  signed:
+    name: Build iOS (signed) & TestFlight
+    runs-on: macos-latest
+    env:
+      HAS_SIGNING: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 != '' && secrets.IOS_CERTIFICATE_PASSWORD != '' && secrets.IOS_PROVISION_PROFILE_BASE64 != '' && secrets.IOS_TEAM_ID != '' }}
+      HAS_ASC: ${{ secrets.APPSTORE_ISSUER_ID != '' && secrets.APPSTORE_KEY_ID != '' && secrets.APPSTORE_PRIVATE_KEY != '' }}
+      WANT_UPLOAD: ${{ (github.event_name == 'workflow_dispatch' && inputs.upload_testflight) || startsWith(github.ref, 'refs/tags/v') }}
+    steps:
+      - name: Check secrets
+        id: check
+        run: |
+          echo "signing=$HAS_SIGNING" >> "$GITHUB_OUTPUT"
+          upload=false
+          if [ "$WANT_UPLOAD" = "true" ] && [ "$HAS_ASC" = "true" ]; then upload=true; fi
+          echo "upload=$upload" >> "$GITHUB_OUTPUT"
+          if [ "$HAS_SIGNING" != "true" ]; then
+            echo "::notice::서명 시크릿이 없어 서명 빌드를 건너뜁니다. 'iOS Signing Setup' 워크플로우를 먼저 실행하세요 (docs/IOS_BUILD.md)."
+          elif [ "$WANT_UPLOAD" = "true" ] && [ "$HAS_ASC" != "true" ]; then
+            echo "::warning::App Store Connect API 시크릿이 없어 TestFlight 업로드를 건너뜁니다."
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.signing == 'true'
+
+      - uses: subosito/flutter-action@v2
+        if: steps.check.outputs.signing == 'true'
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install certificate & profile
+        if: steps.check.outputs.signing == 'true'
+        env:
+          P12_BASE64: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          CERT=$RUNNER_TEMP/cert.p12
+          PROFILE=$RUNNER_TEMP/profile.mobileprovision
+          KEYCHAIN=$RUNNER_TEMP/build.keychain-db
+          printf '%s' "$P12_BASE64" | base64 --decode > "$CERT"
+          printf '%s' "$PROFILE_BASE64" | base64 --decode > "$PROFILE"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          # Apple Distribution 인증서의 중간 인증서 (러너에 없을 때 대비).
+          curl -fsSL -o "$RUNNER_TEMP/AppleWWDRCAG3.cer" https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer \
+            && security import "$RUNNER_TEMP/AppleWWDRCAG3.cer" -k "$KEYCHAIN" -T /usr/bin/codesign || true
+          security import "$CERT" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          security list-keychain -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          security find-identity -v -p codesigning "$KEYCHAIN"
+
+          PLIST=$(security cms -D -i "$PROFILE")
+          UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' /dev/stdin <<< "$PLIST")
+          NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' /dev/stdin <<< "$PLIST")
+          EXP=$(/usr/libexec/PlistBuddy -c 'Print :ExpirationDate' /dev/stdin <<< "$PLIST")
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp "$PROFILE" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
+          echo "PROFILE_NAME=$NAME" >> "$GITHUB_ENV"
+          echo "프로파일: $NAME ($UUID), 만료 $EXP"
+
+      - name: Configure manual signing
+        if: steps.check.outputs.signing == 'true'
+        env:
+          TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          set -e
+          ruby -e "require 'xcodeproj'" 2>/dev/null || gem install xcodeproj --no-document || sudo gem install xcodeproj --no-document
+          ruby scripts/ios_manual_signing.rb ios/Runner.xcodeproj "$TEAM_ID" "$PROFILE_NAME"
+          BUNDLE_ID=$(grep -E 'PRODUCT_BUNDLE_IDENTIFIER = ' ios/Runner.xcodeproj/project.pbxproj | grep -v RunnerTests | head -1 | sed -E 's/.*= "?([^";]+)"?;.*/\1/')
+          echo "BUNDLE_ID=$BUNDLE_ID" >> "$GITHUB_ENV"
+          python3 - <<PY
+          import plistlib
+          opts = {
+              "method": "app-store-connect",
+              "teamID": "$TEAM_ID",
+              "signingStyle": "manual",
+              "signingCertificate": "Apple Distribution",
+              "provisioningProfiles": {"$BUNDLE_ID": "$PROFILE_NAME"},
+              "uploadSymbols": True,
+              "manageAppVersionAndBuildNumber": False,
+          }
+          with open("ios/ExportOptions.plist", "wb") as f:
+              plistlib.dump(opts, f)
+          opts["destination"] = "upload"
+          with open("ios/ExportOptionsUpload.plist", "wb") as f:
+              plistlib.dump(opts, f)
+          PY
+          cat ios/ExportOptions.plist
+
+      - name: Build signed IPA
+        if: steps.check.outputs.signing == 'true'
+        run: |
+          flutter pub get
+          flutter build ipa --release \
+            --export-options-plist=ios/ExportOptions.plist \
+            --build-number=${{ github.run_number }}
+          ls -la build/ios/ipa
+
+      - uses: actions/upload-artifact@v4
+        if: steps.check.outputs.signing == 'true'
+        with:
+          name: ios-signed-ipa
+          path: build/ios/ipa/*.ipa
+          retention-days: 14
+
+      - name: Upload to TestFlight
+        if: steps.check.outputs.signing == 'true' && steps.check.outputs.upload == 'true'
+        env:
+          ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          KEY_DIR=~/.appstoreconnect/private_keys
+          mkdir -p "$KEY_DIR"
+          KEY_FILE="$KEY_DIR/AuthKey_${KEY_ID}.p8"
+          python3 - "$KEY_FILE" <<'PY'
+          import os, re, sys
+          t = os.environ["PRIVATE_KEY"].strip().replace("\\n", "\n").replace("\r", "")
+          if "BEGIN PRIVATE KEY" not in t:
+              b = re.sub(r"\s+", "", t)
+              t = "-----BEGIN PRIVATE KEY-----\n" + "\n".join(b[i:i+64] for i in range(0, len(b), 64)) + "\n-----END PRIVATE KEY-----"
+          open(sys.argv[1], "w").write(t + "\n")
+          PY
+          # 1차: Xcode 의 공식 업로드 경로 (exportArchive + destination=upload)
+          if xcodebuild -exportArchive \
+              -archivePath build/ios/archive/Runner.xcarchive \
+              -exportOptionsPlist ios/ExportOptionsUpload.plist \
+              -exportPath build/ios/upload \
+              -authenticationKeyPath "$KEY_FILE" \
+              -authenticationKeyID "$KEY_ID" \
+              -authenticationKeyIssuerID "$ISSUER_ID"; then
+            echo "업로드 완료 (xcodebuild)."
+          else
+            echo "::warning::xcodebuild 업로드 실패. altool 로 다시 시도합니다."
+            IPA=$(ls build/ios/ipa/*.ipa | head -1)
+            xcrun altool --upload-app --type ios --file "$IPA" \
+              --apiKey "$KEY_ID" --apiIssuer "$ISSUER_ID"
+          fi
+          {
+            echo "## TestFlight 업로드 완료"
+            echo "빌드 번호: ${{ github.run_number }}"
+            echo "App Store Connect 처리(5~30분)가 끝나면 iPhone 의 TestFlight 앱에 나타납니다."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Cleanup
+        if: always() && steps.check.outputs.signing == 'true'
+        run: |
+          security delete-keychain "$RUNNER_TEMP/build.keychain-db" || true
+          rm -f "$RUNNER_TEMP/cert.p12" "$RUNNER_TEMP/profile.mobileprovision"
+          rm -rf ~/.appstoreconnect/private_keys
